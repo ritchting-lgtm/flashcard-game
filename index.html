@@ -3,45 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QuizQuest: Interactive Learning Adventure</title>
+    <title>QuizQuest</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; justify-content: center; align-items: center; }
         .menu-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; justify-content: center; align-items: center; z-index: 1000; }
         .menu-screen.hidden { display: none; }
-        .menu-container { text-align: center; background: rgba(255, 255, 255, 0.95); padding: 50px; border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); max-width: 500px; animation: slideDown 0.5s ease-out; }
-        @keyframes slideDown { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .game-title { font-size: 48px; color: #667eea; margin-bottom: 10px; animation: bounce 0.6s ease-in-out; }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+        .menu-container { text-align: center; background: rgba(255, 255, 255, 0.95); padding: 50px; border-radius: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); max-width: 500px; }
+        .game-title { font-size: 48px; color: #667eea; margin-bottom: 10px; }
         .game-subtitle { font-size: 18px; color: #666; margin-bottom: 40px; }
         .menu-buttons { display: flex; flex-direction: column; gap: 15px; }
-        .menu-button { padding: 15px 30px; font-size: 18px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; cursor: pointer; transition: all 0.3s; font-weight: bold; }
+        .menu-button { padding: 15px 30px; font-size: 18px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; }
         .menu-button:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4); }
         .game-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; justify-content: center; align-items: center; }
         .game-screen.hidden { display: none; }
-        #gameCanvas { display: block; background: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 100%); max-width: 100%; max-height: 100vh; }
+        #gameCanvas { display: block; background: linear-gradient(180deg, #87CEEB 0%, #E0F6FF 100%); }
         .hud { position: fixed; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; align-items: center; color: white; font-size: 16px; z-index: 100; background: rgba(0, 0, 0, 0.7); padding: 15px; border-radius: 10px; }
         .hud-left { display: flex; gap: 30px; }
         .hud-item { display: flex; gap: 10px; align-items: center; }
         .hud-label { font-weight: bold; color: #ffdd57; }
-        .hud-right { display: flex; align-items: center; gap: 15px; }
         .progress-bar { width: 200px; height: 20px; background: rgba(255, 255, 255, 0.2); border-radius: 10px; overflow: hidden; border: 2px solid white; }
         .progress-fill { height: 100%; background: linear-gradient(90deg, #00d4ff, #0099ff); transition: width 0.3s ease; }
         .quiz-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 500; }
         .quiz-overlay.hidden { display: none; }
         .quiz-panel { background: white; border-radius: 15px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); }
         .quiz-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 15px 15px 0 0; display: flex; justify-content: space-between; align-items: center; }
-        .close-btn { background: rgba(255, 255, 255, 0.2); border: none; color: white; font-size: 24px; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; transition: all 0.3s; }
+        .close-btn { background: rgba(255, 255, 255, 0.2); border: none; color: white; font-size: 24px; cursor: pointer; width: 40px; height: 40px; border-radius: 50%; }
         .quiz-content { padding: 30px; }
-        .question-text { font-size: 20px; font-weight: bold; color: #333; margin-bottom: 25px; }
+        .question-text { font-size: 20px; font-weight: bold; color: #333; margin-bottom: 25px; line-height: 1.6; }
         .answer-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
-        .answer-option { padding: 15px; background: #f5f5f5; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; transition: all 0.3s; font-size: 16px; }
+        .answer-option { padding: 15px; background: #f5f5f5; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; font-size: 16px; }
         .answer-option:hover { background: #e8e8ff; border-color: #667eea; }
         .answer-option.selected { background: #667eea; color: white; }
-        .answer-option.correct { background: #4caf50; color: white; }
-        .answer-option.incorrect { background: #f44336; color: white; }
-        .submit-button { width: 100%; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.3s; }
-        .submit-button:hover { transform: translateY(-2px); }
+        .submit-button { width: 100%; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
         .feedback-message { margin-top: 15px; padding: 12px; border-radius: 8px; font-weight: bold; text-align: center; }
         .feedback-message.hidden { display: none; }
         .feedback-message.correct { background: #c8e6c9; color: #2e7d32; }
@@ -50,6 +44,7 @@
         .pause-menu.hidden { display: none; }
         .pause-panel { background: white; padding: 40px; border-radius: 15px; text-align: center; }
         #fileInput { display: none; }
+        input[type="text"] { width: 100%; padding: 10px; font-size: 16px; border-radius: 8px; border: 2px solid #ddd; }
     </style>
 </head>
 <body>
@@ -65,7 +60,7 @@
                 <p>Press SPACE in a zone to answer</p>
                 <p>Press ESC to pause</p>
             </div>
-            <input type="file" id="fileInput" accept=".json,.csv">
+            <input type="file" id="fileInput" accept=".csv,.json">
         </div>
     </div>
 
@@ -106,28 +101,13 @@
     </div>
 
     <script>
-        const gameState = {
-            player: { x: 100, y: 100, width: 40, height: 40, speed: 2.5, velocityX: 0, velocityY: 0, direction: 'down', animationFrame: 0, animationCounter: 0 },
-            camera: { x: 0, y: 0, width: 1200, height: 700 },
-            zones: [], quizzes: [], score: 0, completedQuestions: new Set(), currentZone: null, isPaused: false, gameStarted: false, keys: {}
-        };
-
+        const gameState = { player: { x: 100, y: 100, width: 40, height: 40 }, camera: { x: 0, y: 0, width: 1200, height: 700 }, zones: [], quizzes: [], score: 0, completedQuestions: new Set(), currentZone: null, isPaused: false, gameStarted: false, keys: {} };
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const fileInput = document.getElementById('fileInput');
         const uploadBtn = document.getElementById('uploadBtn');
         const mainMenuEl = document.getElementById('mainMenu');
         const gameScreenEl = document.getElementById('gameScreen');
-        const scoreDisplay = document.getElementById('scoreDisplay');
-        const zoneDisplay = document.getElementById('zoneDisplay');
-        const progressFill = document.getElementById('progressFill');
-        const progressText = document.getElementById('progressText');
-        const quizOverlay = document.getElementById('quizOverlay');
-        const pauseMenu = document.getElementById('pauseMenu');
-        const resumeBtn = document.getElementById('resumeBtn');
-        const mainMenuBtn = document.getElementById('mainMenuBtn');
-        const submitAnswerBtn = document.getElementById('submitAnswerBtn');
-        const closeQuizBtn = document.getElementById('closeQuizBtn');
 
         uploadBtn.addEventListener('click', () => fileInput.click());
 
@@ -138,9 +118,7 @@
             reader.onload = (event) => {
                 try {
                     let quizData = [];
-                    if (file.name.endsWith('.json')) {
-                        quizData = JSON.parse(event.target.result);
-                    } else if (file.name.endsWith('.csv')) {
+                    if (file.name.endsWith('.csv')) {
                         quizData = parseCSV(event.target.result);
                     }
                     gameState.zones = [];
@@ -150,7 +128,7 @@
                     processQuizData(quizData);
                     startGame();
                 } catch (e) {
-                    alert('Error loading file: ' + e.message);
+                    alert('Error: ' + e.message);
                 }
             };
             reader.readAsText(file);
@@ -159,43 +137,26 @@
         function parseCSV(content) {
             const lines = content.split('\n').filter(l => l.trim());
             const quizData = [];
-            for (let i = 1; i < lines.length; i++) {
-                const parts = lines[i].split(',');
-                if (parts.length >= 5) {
-                    quizData.push({
-                        zone: parts[0].trim(),
-                        question: parts[1].trim(),
-                        type: parts[2].trim(),
-                        options: parts[3].trim() ? parts[3].split('|').map(o => o.trim()) : [],
-                        answer: parts[4].trim()
-                    });
+            for (let line of lines) {
+                const parts = line.split('\t').length > 1 ? line.split('\t') : line.split(',');
+                if (parts.length >= 2) {
+                    const question = parts[0].trim();
+                    const answer = parts[1].trim();
+                    if (question && answer) {
+                        quizData.push({ zone: 'Quiz', question, type: 'text', options: [], answer });
+                    }
                 }
             }
             return quizData;
         }
 
         function processQuizData(quizData) {
-            const zoneMap = new Map();
-            quizData.forEach(q => {
-                if (!zoneMap.has(q.zone)) zoneMap.set(q.zone, []);
-                zoneMap.get(q.zone).push(q);
-            });
-            const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F'];
+            const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8'];
             let idx = 0;
-            zoneMap.forEach((qs, zoneName) => {
-                gameState.zones.push({
-                    name: zoneName,
-                    x: (idx % 3) * 450 + 150,
-                    y: Math.floor(idx / 3) * 450 + 150,
-                    width: 350,
-                    height: 350,
-                    color: colors[idx % colors.length],
-                    icon: ['🏫', '📚', '🧪', '🌲', '💻', '🎨'][idx % 6],
-                    completed: false
-                });
-                gameState.quizzes.push(...qs);
-                idx++;
-            });
+            const zone = { name: 'Quiz Zone', x: 150, y: 150, width: 350, height: 350, color: colors[idx], icon: '📚', completed: false };
+            gameState.zones.push(zone);
+            gameState.quizzes = quizData;
+            idx++;
         }
 
         function startGame() {
@@ -210,7 +171,7 @@
             if (e.key === 'Escape') togglePause();
             if (e.code === 'Space' && gameState.currentZone && !gameState.isPaused) {
                 e.preventDefault();
-                if (quizOverlay.classList.contains('hidden')) showQuiz();
+                if (document.getElementById('quizOverlay').classList.contains('hidden')) showQuiz();
             }
         });
 
@@ -219,54 +180,44 @@
         function togglePause() {
             if (!gameState.gameStarted) return;
             gameState.isPaused = !gameState.isPaused;
-            pauseMenu.classList.toggle('hidden');
+            document.getElementById('pauseMenu').classList.toggle('hidden');
         }
 
-        resumeBtn.addEventListener('click', () => {
+        document.getElementById('resumeBtn').addEventListener('click', () => {
             gameState.isPaused = false;
-            pauseMenu.classList.add('hidden');
+            document.getElementById('pauseMenu').classList.add('hidden');
         });
 
-        mainMenuBtn.addEventListener('click', () => {
+        document.getElementById('mainMenuBtn').addEventListener('click', () => {
             gameState.gameStarted = false;
             gameScreenEl.classList.add('hidden');
             mainMenuEl.classList.remove('hidden');
-            quizOverlay.classList.add('hidden');
         });
 
         function updatePlayer() {
             gameState.player.velocityX = 0;
             gameState.player.velocityY = 0;
-            if (gameState.keys['arrowup'] || gameState.keys['w']) { gameState.player.velocityY = -2.5; gameState.player.direction = 'up'; }
-            if (gameState.keys['arrowdown'] || gameState.keys['s']) { gameState.player.velocityY = 2.5; gameState.player.direction = 'down'; }
-            if (gameState.keys['arrowleft'] || gameState.keys['a']) { gameState.player.velocityX = -2.5; gameState.player.direction = 'left'; }
-            if (gameState.keys['arrowright'] || gameState.keys['d']) { gameState.player.velocityX = 2.5; gameState.player.direction = 'right'; }
+            if (gameState.keys['arrowup'] || gameState.keys['w']) gameState.player.velocityY = -2.5;
+            if (gameState.keys['arrowdown'] || gameState.keys['s']) gameState.player.velocityY = 2.5;
+            if (gameState.keys['arrowleft'] || gameState.keys['a']) gameState.player.velocityX = -2.5;
+            if (gameState.keys['arrowright'] || gameState.keys['d']) gameState.player.velocityX = 2.5;
 
             gameState.player.x += gameState.player.velocityX;
             gameState.player.y += gameState.player.velocityY;
 
-            const mapWidth = gameState.zones.length > 0 ? 2000 : 1200;
-            const mapHeight = gameState.zones.length > 0 ? 2000 : 700;
             if (gameState.player.x < 0) gameState.player.x = 0;
-            if (gameState.player.x + gameState.player.width > mapWidth) gameState.player.x = mapWidth - gameState.player.width;
+            if (gameState.player.x > 2000) gameState.player.x = 2000;
             if (gameState.player.y < 0) gameState.player.y = 0;
-            if (gameState.player.y + gameState.player.height > mapHeight) gameState.player.y = mapHeight - gameState.player.height;
+            if (gameState.player.y > 2000) gameState.player.y = 2000;
 
-            gameState.camera.x = Math.max(0, gameState.player.x - gameState.camera.width / 2);
-            gameState.camera.y = Math.max(0, gameState.player.y - gameState.camera.height / 2);
+            gameState.camera.x = gameState.player.x - 600;
+            gameState.camera.y = gameState.player.y - 350;
 
-            checkZoneCollision();
-        }
-
-        function checkZoneCollision() {
             gameState.currentZone = null;
             for (let zone of gameState.zones) {
-                if (gameState.player.x < zone.x + zone.width &&
-                    gameState.player.x + gameState.player.width > zone.x &&
-                    gameState.player.y < zone.y + zone.height &&
-                    gameState.player.y + gameState.player.height > zone.y) {
+                if (gameState.player.x < zone.x + zone.width && gameState.player.x + gameState.player.width > zone.x &&
+                    gameState.player.y < zone.y + zone.height && gameState.player.y + gameState.player.height > zone.y) {
                     gameState.currentZone = zone;
-                    break;
                 }
             }
         }
@@ -290,132 +241,102 @@
                 ctx.strokeStyle = '#333';
                 ctx.lineWidth = 3;
                 ctx.strokeRect(sx, sy, zone.width, zone.height);
-                ctx.fillStyle = '#fff';
-                ctx.font = 'bold 24px Arial';
+                
+                ctx.font = 'bold 50px Arial';
                 ctx.textAlign = 'center';
-                ctx.fillText(zone.icon, sx + zone.width / 2, sy + zone.height / 2 - 10);
-                ctx.font = 'bold 16px Arial';
-                ctx.fillText(zone.name, sx + zone.width / 2, sy + zone.height / 2 + 30);
-                if (zone.completed) {
-                    ctx.fillStyle = '#4CAF50';
-                    ctx.font = 'bold 20px Arial';
-                    ctx.fillText('✓', sx + zone.width - 30, sy + 30);
-                }
+                ctx.fillText(zone.icon, sx + zone.width / 2, sy + zone.height / 2 - 30);
+                
+                ctx.fillStyle = '#333';
+                ctx.font = 'bold 20px Arial';
+                ctx.fillText(zone.name, sx + zone.width / 2, sy + zone.height / 2 + 60);
             }
 
-            drawPlayer();
-
-            if (gameState.currentZone) {
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-                ctx.fillRect(10, canvas.height - 60, 300, 50);
-                ctx.fillStyle = '#fff';
-                ctx.font = 'bold 14px Arial';
-                ctx.textAlign = 'left';
-                ctx.fillText(`Press SPACE to answer`, 20, canvas.height - 35);
-            }
-        }
-
-        function drawPlayer() {
             const sx = gameState.player.x - gameState.camera.x;
             const sy = gameState.player.y - gameState.camera.y;
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-            ctx.beginPath();
-            ctx.ellipse(sx + 20, sy + 38, 20, 5, 0, 0, Math.PI * 2);
-            ctx.fill();
             ctx.fillStyle = '#FF6B6B';
             ctx.fillRect(sx + 10, sy + 10, 20, 15);
             ctx.fillStyle = '#FFD93D';
             ctx.beginPath();
             ctx.arc(sx + 20, sy + 8, 8, 0, Math.PI * 2);
             ctx.fill();
-            ctx.fillStyle = '#000';
-            ctx.beginPath();
-            ctx.arc(sx + 18, sy + 7, 2, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.arc(sx + 22, sy + 7, 2, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = '#333';
-            ctx.fillRect(sx + 13, sy + 25, 4, 12);
-            ctx.fillRect(sx + 23, sy + 25, 4, 12);
+
+            if (gameState.currentZone) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                ctx.fillRect(10, canvas.height - 60, 400, 50);
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 14px Arial';
+                ctx.fillText('Press SPACE to take quiz', 20, canvas.height - 35);
+            }
         }
 
         function updateHUD() {
-            scoreDisplay.textContent = gameState.score;
-            zoneDisplay.textContent = gameState.currentZone ? gameState.currentZone.name : 'Exploring';
+            document.getElementById('scoreDisplay').textContent = gameState.score;
+            document.getElementById('zoneDisplay').textContent = gameState.currentZone ? gameState.currentZone.name : 'Exploring';
             const total = gameState.quizzes.length;
             const done = gameState.completedQuestions.size;
-            progressText.textContent = `${done}/${total}`;
-            progressFill.style.width = total > 0 ? (done / total * 100) + '%' : '0%';
+            document.getElementById('progressText').textContent = `${done}/${total}`;
+            document.getElementById('progressFill').style.width = total > 0 ? (done / total * 100) + '%' : '0%';
         }
 
         let currentQuestion = null;
         let selectedAnswer = null;
 
         function showQuiz() {
-            const zqs = gameState.quizzes.filter(q => q.zone === gameState.currentZone.name);
-            const unasked = zqs.find(q => !gameState.completedQuestions.has(q.question));
+            const unasked = gameState.quizzes.find(q => !gameState.completedQuestions.has(q.question));
             if (!unasked) {
-                alert('All questions in this zone completed!');
-                gameState.currentZone.completed = true;
+                alert('All questions completed!');
                 return;
             }
             currentQuestion = unasked;
             selectedAnswer = null;
-            document.getElementById('quizZoneName').textContent = gameState.currentZone.name;
             document.getElementById('questionText').textContent = currentQuestion.question;
             document.getElementById('feedbackMessage').classList.add('hidden');
             const answerContainer = document.getElementById('answerContainer');
             answerContainer.innerHTML = '';
-            const options = [...currentQuestion.options].sort(() => Math.random() - 0.5);
-            options.forEach(opt => {
-                const btn = document.createElement('div');
-                btn.className = 'answer-option';
-                btn.textContent = opt;
-                btn.onclick = () => {
-                    document.querySelectorAll('.answer-option').forEach(b => b.classList.remove('selected'));
-                    btn.classList.add('selected');
-                    selectedAnswer = opt;
-                };
-                answerContainer.appendChild(btn);
-            });
-            quizOverlay.classList.remove('hidden');
+            
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.placeholder = 'Type your answer...';
+            input.oninput = (e) => { selectedAnswer = e.target.value; };
+            answerContainer.appendChild(input);
+            
+            document.getElementById('quizOverlay').classList.remove('hidden');
         }
 
-        submitAnswerBtn.addEventListener('click', () => {
-            if (!selectedAnswer) return;
+        document.getElementById('submitAnswerBtn').addEventListener('click', () => {
+            if (!selectedAnswer) { alert('Please answer'); return; }
             const correct = selectedAnswer.toLowerCase().trim() === currentQuestion.answer.toLowerCase().trim();
             const feedback = document.getElementById('feedbackMessage');
             if (correct) {
                 gameState.score += 10;
                 gameState.completedQuestions.add(currentQuestion.question);
                 feedback.textContent = '✅ Correct!';
-                feedback.classList.remove('incorrect');
                 feedback.classList.add('correct');
+                feedback.classList.remove('incorrect');
             } else {
                 feedback.textContent = `❌ Wrong. Answer: ${currentQuestion.answer}`;
-                feedback.classList.remove('correct');
                 feedback.classList.add('incorrect');
+                feedback.classList.remove('correct');
             }
             feedback.classList.remove('hidden');
-            submitAnswerBtn.disabled = true;
+            document.getElementById('submitAnswerBtn').disabled = true;
             setTimeout(() => {
-                quizOverlay.classList.add('hidden');
-                submitAnswerBtn.disabled = false;
+                document.getElementById('quizOverlay').classList.add('hidden');
+                document.getElementById('submitAnswerBtn').disabled = false;
                 updateHUD();
             }, 2000);
         });
 
-        closeQuizBtn.addEventListener('click', () => quizOverlay.classList.add('hidden'));
+        document.getElementById('closeQuizBtn').addEventListener('click', () => {
+            document.getElementById('quizOverlay').classList.add('hidden');
+        });
 
         function gameLoop() {
-            if (gameState.isPaused) {
-                requestAnimationFrame(gameLoop);
-                return;
+            if (!gameState.isPaused) {
+                updatePlayer();
+                updateHUD();
+                draw();
             }
-            updatePlayer();
-            updateHUD();
-            draw();
             requestAnimationFrame(gameLoop);
         }
     </script>
