@@ -42,5 +42,382 @@
         .answer-option.incorrect { background: #f44336; color: white; }
         .submit-button { width: 100%; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.3s; }
         .submit-button:hover { transform: translateY(-2px); }
-        .feedback-message { margin-top: 15px; padding: 12px; border-radius: 8px; font*
-
+        .feedback-message { margin-top: 15px; padding: 12px; border-radius: 8px; font-weight: bold; text-align: center; }
+        .feedback-message.hidden { display: none; }
+        .feedback-message.correct { background: #c8e6c9; color: #2e7d32; }
+        .feedback-message.incorrect { background: #ffcdd2; color: #c62828; }
+        .pause-menu { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 600; }
+        .pause-menu.hidden { display: none; }
+        .pause-panel { background: white; padding: 40px; border-radius: 15px; text-align: center; }
+        #fileInput { display: none; }
+    </style>
+</head>
+<body>
+    <div id="mainMenu" class="menu-screen">
+        <div class="menu-container">
+            <h1 class="game-title">🎮 QuizQuest</h1>
+            <p class="game-subtitle">Interactive Learning Adventure</p>
+            <div class="menu-buttons">
+                <button id="uploadBtn" class="menu-button">📁 Upload Flashcards</button>
+            </div>
+            <div style="font-size: 14px; color: #999; margin-top: 20px;">
+                <p>⬆️⬇️⬅️➡️ or WASD to move</p>
+                <p>Press SPACE in a zone to answer</p>
+                <p>Press ESC to pause</p>
+            </div>
+            <input type="file" id="fileInput" accept=".json,.csv">
+        </div>
+    </div>
+
+    <div id="gameScreen" class="game-screen hidden">
+        <canvas id="gameCanvas" width="1200" height="700"></canvas>
+        <div id="hud" class="hud">
+            <div class="hud-left">
+                <div class="hud-item"><span class="hud-label">Score:</span><span id="scoreDisplay">0</span></div>
+                <div class="hud-item"><span class="hud-label">Zone:</span><span id="zoneDisplay">Exploring</span></div>
+            </div>
+            <div class="hud-right">
+                <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+                <span id="progressText">0/0</span>
+            </div>
+        </div>
+        <div id="pauseMenu" class="pause-menu hidden">
+            <div class="pause-panel">
+                <h2>⏸️ PAUSED</h2>
+                <button id="resumeBtn" class="menu-button">Resume</button>
+                <button id="mainMenuBtn" class="menu-button">Main Menu</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="quizOverlay" class="quiz-overlay hidden">
+        <div class="quiz-panel">
+            <div class="quiz-header">
+                <h2 id="quizZoneName">Quiz</h2>
+                <button id="closeQuizBtn" class="close-btn">✕</button>
+            </div>
+            <div class="quiz-content">
+                <div id="questionText" class="question-text"></div>
+                <div id="answerContainer" class="answer-container"></div>
+                <button id="submitAnswerBtn" class="submit-button">Submit</button>
+                <div id="feedbackMessage" class="feedback-message hidden"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const gameState = {
+            player: { x: 100, y: 100, width: 40, height: 40, speed: 2.5, velocityX: 0, velocityY: 0, direction: 'down', animationFrame: 0, animationCounter: 0 },
+            camera: { x: 0, y: 0, width: 1200, height: 700 },
+            zones: [], quizzes: [], score: 0, completedQuestions: new Set(), currentZone: null, isPaused: false, gameStarted: false, keys: {}
+        };
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const mainMenuEl = document.getElementById('mainMenu');
+        const gameScreenEl = document.getElementById('gameScreen');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const zoneDisplay = document.getElementById('zoneDisplay');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const quizOverlay = document.getElementById('quizOverlay');
+        const pauseMenu = document.getElementById('pauseMenu');
+        const resumeBtn = document.getElementById('resumeBtn');
+        const mainMenuBtn = document.getElementById('mainMenuBtn');
+        const submitAnswerBtn = document.getElementById('submitAnswerBtn');
+        const closeQuizBtn = document.getElementById('closeQuizBtn');
+
+        uploadBtn.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    let quizData = [];
+                    if (file.name.endsWith('.json')) {
+                        quizData = JSON.parse(event.target.result);
+                    } else if (file.name.endsWith('.csv')) {
+                        quizData = parseCSV(event.target.result);
+                    }
+                    gameState.zones = [];
+                    gameState.quizzes = [];
+                    gameState.completedQuestions.clear();
+                    gameState.score = 0;
+                    processQuizData(quizData);
+                    startGame();
+                } catch (e) {
+                    alert('Error loading file: ' + e.message);
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        function parseCSV(content) {
+            const lines = content.split('\n').filter(l => l.trim());
+            const quizData = [];
+            for (let i = 1; i < lines.length; i++) {
+                const parts = lines[i].split(',');
+                if (parts.length >= 5) {
+                    quizData.push({
+                        zone: parts[0].trim(),
+                        question: parts[1].trim(),
+                        type: parts[2].trim(),
+                        options: parts[3].trim() ? parts[3].split('|').map(o => o.trim()) : [],
+                        answer: parts[4].trim()
+                    });
+                }
+            }
+            return quizData;
+        }
+
+        function processQuizData(quizData) {
+            const zoneMap = new Map();
+            quizData.forEach(q => {
+                if (!zoneMap.has(q.zone)) zoneMap.set(q.zone, []);
+                zoneMap.get(q.zone).push(q);
+            });
+            const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F'];
+            let idx = 0;
+            zoneMap.forEach((qs, zoneName) => {
+                gameState.zones.push({
+                    name: zoneName,
+                    x: (idx % 3) * 450 + 150,
+                    y: Math.floor(idx / 3) * 450 + 150,
+                    width: 350,
+                    height: 350,
+                    color: colors[idx % colors.length],
+                    icon: ['🏫', '📚', '🧪', '🌲', '💻', '🎨'][idx % 6],
+                    completed: false
+                });
+                gameState.quizzes.push(...qs);
+                idx++;
+            });
+        }
+
+        function startGame() {
+            gameState.gameStarted = true;
+            mainMenuEl.classList.add('hidden');
+            gameScreenEl.classList.remove('hidden');
+            gameLoop();
+        }
+
+        window.addEventListener('keydown', (e) => {
+            gameState.keys[e.key.toLowerCase()] = true;
+            if (e.key === 'Escape') togglePause();
+            if (e.code === 'Space' && gameState.currentZone && !gameState.isPaused) {
+                e.preventDefault();
+                if (quizOverlay.classList.contains('hidden')) showQuiz();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => gameState.keys[e.key.toLowerCase()] = false);
+
+        function togglePause() {
+            if (!gameState.gameStarted) return;
+            gameState.isPaused = !gameState.isPaused;
+            pauseMenu.classList.toggle('hidden');
+        }
+
+        resumeBtn.addEventListener('click', () => {
+            gameState.isPaused = false;
+            pauseMenu.classList.add('hidden');
+        });
+
+        mainMenuBtn.addEventListener('click', () => {
+            gameState.gameStarted = false;
+            gameScreenEl.classList.add('hidden');
+            mainMenuEl.classList.remove('hidden');
+            quizOverlay.classList.add('hidden');
+        });
+
+        function updatePlayer() {
+            gameState.player.velocityX = 0;
+            gameState.player.velocityY = 0;
+            if (gameState.keys['arrowup'] || gameState.keys['w']) { gameState.player.velocityY = -2.5; gameState.player.direction = 'up'; }
+            if (gameState.keys['arrowdown'] || gameState.keys['s']) { gameState.player.velocityY = 2.5; gameState.player.direction = 'down'; }
+            if (gameState.keys['arrowleft'] || gameState.keys['a']) { gameState.player.velocityX = -2.5; gameState.player.direction = 'left'; }
+            if (gameState.keys['arrowright'] || gameState.keys['d']) { gameState.player.velocityX = 2.5; gameState.player.direction = 'right'; }
+
+            gameState.player.x += gameState.player.velocityX;
+            gameState.player.y += gameState.player.velocityY;
+
+            const mapWidth = gameState.zones.length > 0 ? 2000 : 1200;
+            const mapHeight = gameState.zones.length > 0 ? 2000 : 700;
+            if (gameState.player.x < 0) gameState.player.x = 0;
+            if (gameState.player.x + gameState.player.width > mapWidth) gameState.player.x = mapWidth - gameState.player.width;
+            if (gameState.player.y < 0) gameState.player.y = 0;
+            if (gameState.player.y + gameState.player.height > mapHeight) gameState.player.y = mapHeight - gameState.player.height;
+
+            gameState.camera.x = Math.max(0, gameState.player.x - gameState.camera.width / 2);
+            gameState.camera.y = Math.max(0, gameState.player.y - gameState.camera.height / 2);
+
+            checkZoneCollision();
+        }
+
+        function checkZoneCollision() {
+            gameState.currentZone = null;
+            for (let zone of gameState.zones) {
+                if (gameState.player.x < zone.x + zone.width &&
+                    gameState.player.x + gameState.player.width > zone.x &&
+                    gameState.player.y < zone.y + zone.height &&
+                    gameState.player.y + gameState.player.height > zone.y) {
+                    gameState.currentZone = zone;
+                    break;
+                }
+            }
+        }
+
+        function draw() {
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#90EE90';
+            for (let i = 0; i < canvas.width; i += 40) {
+                for (let j = 0; j < canvas.height; j += 40) {
+                    if ((i / 40 + j / 40) % 2 === 0) ctx.fillRect(i, j, 40, 40);
+                }
+            }
+
+            for (let zone of gameState.zones) {
+                const sx = zone.x - gameState.camera.x;
+                const sy = zone.y - gameState.camera.y;
+                ctx.fillStyle = zone.color;
+                ctx.fillRect(sx, sy, zone.width, zone.height);
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(sx, sy, zone.width, zone.height);
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 24px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(zone.icon, sx + zone.width / 2, sy + zone.height / 2 - 10);
+                ctx.font = 'bold 16px Arial';
+                ctx.fillText(zone.name, sx + zone.width / 2, sy + zone.height / 2 + 30);
+                if (zone.completed) {
+                    ctx.fillStyle = '#4CAF50';
+                    ctx.font = 'bold 20px Arial';
+                    ctx.fillText('✓', sx + zone.width - 30, sy + 30);
+                }
+            }
+
+            drawPlayer();
+
+            if (gameState.currentZone) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                ctx.fillRect(10, canvas.height - 60, 300, 50);
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 14px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText(`Press SPACE to answer`, 20, canvas.height - 35);
+            }
+        }
+
+        function drawPlayer() {
+            const sx = gameState.player.x - gameState.camera.x;
+            const sy = gameState.player.y - gameState.camera.y;
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.beginPath();
+            ctx.ellipse(sx + 20, sy + 38, 20, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#FF6B6B';
+            ctx.fillRect(sx + 10, sy + 10, 20, 15);
+            ctx.fillStyle = '#FFD93D';
+            ctx.beginPath();
+            ctx.arc(sx + 20, sy + 8, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(sx + 18, sy + 7, 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(sx + 22, sy + 7, 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#333';
+            ctx.fillRect(sx + 13, sy + 25, 4, 12);
+            ctx.fillRect(sx + 23, sy + 25, 4, 12);
+        }
+
+        function updateHUD() {
+            scoreDisplay.textContent = gameState.score;
+            zoneDisplay.textContent = gameState.currentZone ? gameState.currentZone.name : 'Exploring';
+            const total = gameState.quizzes.length;
+            const done = gameState.completedQuestions.size;
+            progressText.textContent = `${done}/${total}`;
+            progressFill.style.width = total > 0 ? (done / total * 100) + '%' : '0%';
+        }
+
+        let currentQuestion = null;
+        let selectedAnswer = null;
+
+        function showQuiz() {
+            const zqs = gameState.quizzes.filter(q => q.zone === gameState.currentZone.name);
+            const unasked = zqs.find(q => !gameState.completedQuestions.has(q.question));
+            if (!unasked) {
+                alert('All questions in this zone completed!');
+                gameState.currentZone.completed = true;
+                return;
+            }
+            currentQuestion = unasked;
+            selectedAnswer = null;
+            document.getElementById('quizZoneName').textContent = gameState.currentZone.name;
+            document.getElementById('questionText').textContent = currentQuestion.question;
+            document.getElementById('feedbackMessage').classList.add('hidden');
+            const answerContainer = document.getElementById('answerContainer');
+            answerContainer.innerHTML = '';
+            const options = [...currentQuestion.options].sort(() => Math.random() - 0.5);
+            options.forEach(opt => {
+                const btn = document.createElement('div');
+                btn.className = 'answer-option';
+                btn.textContent = opt;
+                btn.onclick = () => {
+                    document.querySelectorAll('.answer-option').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                    selectedAnswer = opt;
+                };
+                answerContainer.appendChild(btn);
+            });
+            quizOverlay.classList.remove('hidden');
+        }
+
+        submitAnswerBtn.addEventListener('click', () => {
+            if (!selectedAnswer) return;
+            const correct = selectedAnswer.toLowerCase().trim() === currentQuestion.answer.toLowerCase().trim();
+            const feedback = document.getElementById('feedbackMessage');
+            if (correct) {
+                gameState.score += 10;
+                gameState.completedQuestions.add(currentQuestion.question);
+                feedback.textContent = '✅ Correct!';
+                feedback.classList.remove('incorrect');
+                feedback.classList.add('correct');
+            } else {
+                feedback.textContent = `❌ Wrong. Answer: ${currentQuestion.answer}`;
+                feedback.classList.remove('correct');
+                feedback.classList.add('incorrect');
+            }
+            feedback.classList.remove('hidden');
+            submitAnswerBtn.disabled = true;
+            setTimeout(() => {
+                quizOverlay.classList.add('hidden');
+                submitAnswerBtn.disabled = false;
+                updateHUD();
+            }, 2000);
+        });
+
+        closeQuizBtn.addEventListener('click', () => quizOverlay.classList.add('hidden'));
+
+        function gameLoop() {
+            if (gameState.isPaused) {
+                requestAnimationFrame(gameLoop);
+                return;
+            }
+            updatePlayer();
+            updateHUD();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+    </script>
+</body>
+</html>
